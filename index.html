@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>合盛今日快讯</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- Application Structure Plan: 
+        Refined SPA focusing on editorial-quality text presentation and subtle interactions.
+        1. Header: Minimalist title, localized date.
+        2. Controls: Elegantly styled "Read All" and "AI Trend Analysis" buttons. Language switcher is a discreet text link.
+        3. Main Content: News items with improved typography, spacing, and a refined "Read More/Collapse" interaction.
+        4. AI Display Areas: Clean presentation for AI-generated content.
+        User Flow: A premium reading experience with intuitive navigation and subtle interactive cues.
+    -->
+    <!-- Visualization & Content Choices:
+        - News Item: Enhanced HTML structure for better typographic control. "Read More" is now a more integrated text link/icon.
+        - All interactive elements have refined hover/active states.
+    -->
+    <style>
+        body {
+            font-family: 'Roboto', 'Noto Sans SC', sans-serif; /* Prioritize Roboto for a more international feel */
+            background-color: #FFFFFF; 
+            color: #262626; /* Near Black for primary text */
+            line-height: 1.8; /* Generous line height */
+            padding-bottom: 80px; 
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .app-container {
+            max-width: 900px; /* Slightly wider for more breathing room */
+            margin: 0 auto;
+            padding: 2rem 2.5rem; 
+        }
+        .news-item {
+            background-color: #FFFFFF;
+            border-radius: 0px; /* Sharp edges for a more editorial feel */
+            padding: 2.5rem 0; /* Vertical padding, no horizontal padding, relies on app-container */
+            margin-bottom: 2rem;
+            border-bottom: 1px solid #EAEAEA; /* Subtle separator */
+            transition: background-color 0.3s ease;
+        }
+        .news-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .news-item.reading {
+            border-left: 3px solid #4A5568; 
+            padding-left: calc(2rem - 3px); /* Adjust padding to maintain alignment, assuming original horizontal padding was part of the item, now it's on container */
+        }
+        .news-title {
+            font-size: 2rem; 
+            font-weight: 700; 
+            color: #1A1A1A; 
+            margin-bottom: 0.75rem; 
+            line-height: 1.3;
+            transition: color 0.2s ease;
+        }
+        .news-title:hover { /* Added hover for title for interactivity */
+            color: #4A5568; 
+        }
+        .news-meta {
+            font-size: 0.875rem; 
+            color: #6B7280; 
+            margin-bottom: 1.25rem; 
+            display: flex;
+            align-items: center;
+        }
+        .flag-icon {
+            margin-right: 0.5em; 
+            font-size: 1.2em; 
+            line-height: 1;
+        }
+        .news-content-container {
+             flex-grow: 1;
+        }
+        .news-snippet-content, .news-full-content {
+            font-size: 1.05rem; 
+            color: #4B5864; 
+            margin-bottom: 1rem;
+            white-space: pre-wrap; 
+        }
+        .news-snippet-content {
+            max-height: 6.5em; /* Approx 3 lines based on line-height 1.8 */
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 3; 
+            -webkit-box-orient: vertical;
+        }
+        .read-more-button {
+            display: inline-flex; /* To align icon and text */
+            align-items: center;
+            color: #3B82F6; 
+            font-weight: 500;
+            font-size: 0.95rem;
+            margin-top: 0.5rem;
+            margin-bottom: 1.5rem; 
+            cursor: pointer;
+            transition: color 0.2s ease, letter-spacing 0.2s ease;
+            border: none;
+            background: none;
+            padding: 0.25rem 0.1rem; 
+        }
+        .read-more-button:hover {
+            color: #2563EB; 
+            letter-spacing: 0.3px; /* Subtle letter spacing on hover */
+        }
+        .read-more-button .arrow-icon {
+            display: inline-block;
+            margin-left: 0.4em; /* Space for arrow */
+            font-size: 0.8em; /* Smaller arrow */
+            transition: transform 0.25s ease-in-out;
+        }
+        .read-more-button.expanded .arrow-icon {
+            transform: rotate(180deg);
+        }
+
+        .news-actions {
+             margin-top: auto;
+        }
+        .action-button, .ai-action-button, .control-button {
+            padding: 0.65rem 1.3rem; /* Adjusted padding */
+            border-radius: 8px; /* More standard radius */
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease-in-out; /* Smoother transition */
+            border: 1px solid #D1D5DB; 
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem; /* Adjusted gap */
+            background-color: #FFFFFF;
+            color: #4B5563; 
+        }
+        .action-button:hover, .ai-action-button:hover, .control-button:hover {
+            background-color: #F7FAFC; 
+            border-color: #A0AEC0; /* Slightly darker border on hover */
+            transform: translateY(-2px); /* More noticeable lift */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.07); /* Refined shadow */
+        }
+        .action-button:active, .ai-action-button:active, .control-button:active {
+            transform: translateY(0px) scale(0.97); /* More pronounced press */
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.06);
+        }
+
+        .control-button { 
+            background-color: #4A5568; 
+            color: white;
+            border-color: #4A5568;
+        }
+        .control-button:hover { 
+            background-color: #2D3748; /* Darker Slate */
+            border-color: #2D3748;
+        }
+
+        .language-switcher-fixed {
+            position: fixed;
+            bottom: 25px; 
+            left: 25px;
+            background-color: transparent;
+            color: #718096; /* Softer gray */
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px; 
+            font-size: 0.9rem; /* Slightly larger for better click target */
+            font-weight: 500;
+            z-index: 1000;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+        .language-switcher-fixed:hover {
+            color: #2D3748; /* Darker on hover */
+            background-color: rgba(237, 242, 247, 0.7); /* Very subtle bg on hover */
+        }
+        .ai-summary-display, .ai-trend-analysis-display {
+            margin-top: 1.5rem;
+            padding: 1.5rem; 
+            background-color: #F9FAFB; 
+            border: 1px solid #F3F4F6; 
+            border-radius: 8px;
+            font-size: 0.95rem; 
+            color: #4B5864;
+            white-space: pre-wrap; 
+        }
+        .loading-inline {
+            font-size: 0.8rem;
+            color: #777777;
+            margin-left: 6px;
+        }
+        .section-title {
+            font-size: 1.75rem; 
+            font-weight: 600;
+            color: #1A1A1A; 
+            margin-bottom: 1.5rem;
+            margin-top: 3rem; 
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #EAEAEA;
+        }
+        header h1 {
+             color: #1A1A1A; 
+        }
+        .icon-speaker::before {
+            content: "🔊";
+            margin-right: 0.4em; 
+            font-size: 1em; 
+            line-height: 1;
+        }
+         .icon-ai::before {
+            content: "✨";
+            margin-right: 0.4em; 
+            font-size: 1em; 
+            line-height: 1;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="app-container">
+        <header class="text-center py-10 mb-6">
+            <h1 id="appTitle" class="text-4xl md:text-5xl font-bold tracking-tight">合盛今日快讯</h1>
+            <p id="currentDate" class="text-lg text-gray-500 mt-3"></p>
+        </header>
+
+        <div class="text-center my-8 flex flex-col sm:flex-row justify-center items-center gap-x-4 gap-y-3">
+            <button id="readAllButton" class="control-button" data-lang-key="read_all_auto"><span class="icon-speaker"></span><span class="button-text">自动朗读全部</span></button>
+            <button id="aiTrendAnalysisButton" class="control-button" data-lang-key="ai_trend_analysis_button"><span class="icon-ai"></span><span class="button-text">AI趋势分析</span></button>
+        </div>
+
+        <main id="newsFeed">
+            </main>
+        
+        <div id="loadingState" class="text-center py-12">
+            <p class="text-gray-500 text-lg">正在加载新闻...</p>
+        </div>
+        <div id="noNewsState" class="text-center py-12 hidden">
+            <p class="text-gray-500 text-lg">暂无新闻内容。</p>
+        </div>
+
+        <section id="aiTrendAnalysisSection" class="mt-12 hidden">
+            <h2 class="section-title" data-lang-key="ai_trend_analysis_title">AI趋势洞察</h2>
+            <div id="aiTrendAnalysisDisplay" class="ai-trend-analysis-display">
+                <p class="ai-trend-text-area"></p>
+            </div>
+        </section>
+
+        <footer class="text-center py-10 mt-16 border-t border-gray-200">
+            <p class="text-gray-500 text-sm">&copy; <span id="currentYear"></span> 合盛辅料。保留所有权利。</p>
+        </footer>
+    </div>
+
+    <button id="languageSwitcher" class="language-switcher-fixed">EN</button>
+
+    <script>
+        const appTitleElement = document.getElementById('appTitle');
+        const newsFeed = document.getElementById('newsFeed');
+        const loadingState = document.getElementById('loadingState');
+        const noNewsState = document.getElementById('noNewsState');
+        const languageSwitcherBtn = document.getElementById('languageSwitcher');
+        const readAllButton = document.getElementById('readAllButton');
+        const aiTrendAnalysisButton = document.getElementById('aiTrendAnalysisButton');
+        const aiTrendAnalysisSection = document.getElementById('aiTrendAnalysisSection');
+        const aiTrendAnalysisDisplay = document.getElementById('aiTrendAnalysisDisplay').querySelector('.ai-trend-text-area');
+        const currentDateElement = document.getElementById('currentDate');
+        
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        let currentLanguage = 'zh'; 
+        let speechInstance = window.speechSynthesis;
+        let currentUtterance = null;
+        let isPlayingAll = false;
+        let currentPlayAllIndex = 0;
+
+        const appTitles = {
+            zh: "合盛今日快讯",
+            en: "Hesheng News Express"
+        };
+
+        const flagEmojis = {
+            EU: '🇪🇺', US: '🇺🇸', IN: '🇮🇳', JP: '🇯🇵', KR: '🇰🇷',
+            GLOBAL: '🌐', AF: '🌍', SEA: '🌏', CN: '🇨🇳' 
+        };
+
+        const initialNewsData = [
+            { id: 'news1', title_zh: '欧洲新规：服装辅料环保门槛再提升', title_en: 'Europe Raises Environmental Standards for Garment Trims', content_zh: `2020年11月1日，欧盟通过《REACH法规》（Regulation (EC) No 1907/2006）附件XVII第72条，实施了针对纺织品、服装和鞋类中危害物质的新限制，旨在保护人体健康和环境。该法规限制了33种被分类为1A或1B类致癌、致突变或生殖毒性（CMR）的物质在与人体皮肤接触的消费品中的使用。\n受限物质清单（部分，详见附件XVII附录12）：\n- 镉及其化合物：≤ 1 mg/kg（可提取镉金属）\n- 六价铬化合物：≤ 1 mg/kg（可提取Cr VI）\n- 砷化合物：≤ 1 mg/kg（可提取砷金属）\n- 铅及其化合物：≤ 1 mg/kg（可提取铅金属）\n- 苯（CAS 71-43-2）：≤ 5 mg/kg\n- 苯并[a]芘（CAS 50-32-8）：≤ 1 mg/kg\n- 甲醛（CAS 50-00-0）：≤ 75 mg/kg（夹克、外套、室内装潢至2023年11月1日前≤ 300 mg/kg）\n- 邻苯二甲酸酯：≤ 1000 mg/kg（单独或组合）\n- 偶氮染料（如C.I.分散蓝1，CAS 2475-45-8）：≤ 50 mg/kg\n适用范围：\n- 服装及相关配件（如运动服、运动包）\n- 与皮肤接触的非服装纺织品（如床上用品、毛毯）\n- 鞋类\n豁免：\n- 仅由天然皮革、毛皮或兽皮制成的产品\n- 非纺织紧固件和装饰附件\n- 二手服装\n对中国钮扣制造商的影响：\n- 产品合规性：需立即审查钮扣产品成分，确保不含超标受限物质，特别是铅和偶氮染料。\n- 原材料采购：与供应商合作，采购符合欧盟标准的原材料，避免使用含铅或镉的金属合金。\n- 测试与认证：通过认证实验室进行产品测试，确保符合新限值并获得认证。\n- 供应链调整：建立可追溯系统，记录原材料来源和生产过程，以应对欧盟监管要求。\n- 时间紧迫：法规已生效，需迅速采取行动以避免出口受阻。`, content_en: `On November 1, 2020, the EU implemented new restrictions on hazardous substances in textiles, clothing, and footwear through Annex XVII, Article 72 of the REACH Regulation (EC) No 1907/2006, aiming to protect human health and the environment. The regulation restricts 33 substances classified as carcinogenic, mutagenic, or reprotoxic (CMR) category 1A or 1B in consumer products that come into contact with human skin.\nRestricted Substances List (partial, see Annex XVII Appendix 12 for details):\n- Cadmium and its compounds: ≤ 1 mg/kg (extractable cadmium metal)\n- Hexavalent chromium compounds: ≤ 1 mg/kg (extractable Cr VI)\n- Arsenic compounds: ≤ 1 mg/kg (extractable arsenic metal)\n- Lead and its compounds: ≤ 1 mg/kg (extractable lead metal)\n- Benzene (CAS 71-43-2): ≤ 5 mg/kg\n- Benzo[a]pyrene (CAS 50-32-8): ≤ 1 mg/kg\n- Formaldehyde (CAS 50-00-0): ≤ 75 mg/kg (for jackets, coats, upholstery until Nov 1, 2023 ≤ 300 mg/kg)\n- Phthalates: ≤ 1000 mg/kg (individually or combined)\n- Azo dyes (e.g., C.I. Disperse Blue 1, CAS 2475-45-8): ≤ 50 mg/kg\nScope:\n- Clothing and related accessories (e.g., sportswear, sports bags).\n- Non-clothing textiles in contact with skin (e.g., bedding, blankets).\n- Footwear.\nExemptions:\n- Products made exclusively of natural leather, fur, or hide.\n- Non-textile fasteners and decorative attachments.\n- Second-hand clothing.\nImpact on Chinese Button Manufacturers:\n- Product Compliance: Immediately review button product compositions to ensure they do not exceed restricted substance limits, especially for lead and azo dyes.\n- Raw Material Sourcing: Collaborate with suppliers to source EU-compliant raw materials, avoiding lead or cadmium-containing metal alloys.\n- Testing & Certification: Conduct product testing through certified labs to ensure compliance with new limits and obtain certification.\n- Supply Chain Adjustment: Establish traceability systems to record raw material origins and production processes to meet EU regulatory demands.\n- Urgency: The regulation is effective; swift action is needed to avoid export disruptions.`, source_zh: '欧洲化学品管理局（ECHA）、REACH法规', source_en: 'European Chemicals Agency (ECHA), REACH Regulation', publishDate: '2025-06-03', sourceCountryCode: 'EU' },
+            { id: 'news2', title_zh: '北美服装业复苏，辅料需求飙升', title_en: 'North American Apparel Industry Recovers, Trim Demand Surges', content_zh: `随着北美经济逐步复苏，消费者对服装的购买意愿增强，服装销售显著增长。根据北美服装行业协会的报告，经济改善和消费者信心提升推动了服装市场的回暖，预计未来一年内辅料需求将增长15-20%。主要驱动因素包括：\n- 经济复苏：消费者可支配收入增加，刺激了对时尚产品的需求。\n- 时尚趋势：消费者追求独特和时尚的配件，如个性化设计的钮扣。\n- 可持续性：对环保和可持续产品的需求增加，影响辅料选择。\n对中国钮扣制造商的影响：\n- 市场拓展：抓住北美市场增长机遇，增加出口份额。\n- 产品开发：研发符合北美消费者喜好的钮扣，如简约设计、天然材料（木质、贝壳）或可持续产品。\n- 建立合作：与北美服装制造商和零售商建立长期合作关系，确保稳定订单。\n- 合规性：确保产品符合北美安全和质量标准，如美国消费品安全委员会（CPSC）或加拿大消费品安全法案（CCPSA）。\n- 营销策略：通过参加贸易展览（如MAGIC Las Vegas）或在线平台提升品牌知名度。`, content_en: `As the North American economy gradually recovers, consumer willingness to purchase apparel has increased, leading to significant growth in clothing sales. According to a report by the North American Apparel Industry Association, economic improvement and rising consumer confidence have driven the recovery of the apparel market, with trim demand expected to grow by 15-20% in the coming year. Key drivers include:\n- Economic Recovery: Increased consumer disposable income stimulates demand for fashion products.\n- Fashion Trends: Consumers seek unique and stylish accessories, such as personalized button designs.\n- Sustainability: Growing demand for eco-friendly and sustainable products influences trim choices.\nImpact on Chinese Button Manufacturers:\n- Market Expansion: Seize growth opportunities in the North American market to increase export share.\n- Product Development: Develop buttons catering to North American consumer preferences, such as minimalist designs, natural materials (wood, shell), or sustainable products.\n- Establish Cooperation: Build long-term partnerships with North American apparel manufacturers and retailers to secure stable orders.\n- Compliance: Ensure products meet North American safety and quality standards, such as those from the U.S. Consumer Product Safety Commission (CPSC) or the Canada Consumer Product Safety Act (CCPSA).\n- Marketing Strategy: Enhance brand visibility by participating in trade shows (e.g., MAGIC Las Vegas) or utilizing online platforms.`, source_zh: '北美服装行业协会、市场研究报告', source_en: 'North American Apparel Industry Association, Market Research Reports', publishDate: '2025-06-02', sourceCountryCode: 'US'},
+            { id: 'news3', title_zh: '印度扶持本土辅料产业，进口或受影响', title_en: 'India Supports Domestic Trim Industry, Imports May Be Affected', content_zh: `印度政府通过多项政策支持本土服装辅料产业，目标在三年内将自给率从60%提高到80%。政策包括：\n- 税收优惠：为本地制造商提供税收减免和优惠。\n- 研发补贴：为辅料行业的研发提供资金支持，鼓励创新。\n- 进口关税：计划逐步提高进口辅料的关税，以保护本土产业。\n对中国钮扣制造商的影响：\n- 市场评估：密切关注印度政策变化，评估对出口业务的影响。\n- 本地生产：考虑在印度设立生产基地，利用当地政策优势。\n- 合作机会：与印度企业建立合资或合作关系，维持市场竞争力。\n- 市场多元化：开拓其他市场（如东南亚、非洲），减少对印度市场的依赖。`, content_en: `The Indian government is supporting its domestic garment accessories industry through various policies, aiming to increase self-sufficiency from 60% to 80% within three years. Policies include:\n- Tax Incentives: Providing tax exemptions and benefits for local manufacturers.\n- R&D Subsidies: Offering financial support for R&D in the accessories sector to encourage innovation.\n- Import Tariffs: Planning to gradually increase tariffs on imported trims to protect the domestic industry.\nImpact on Chinese Button Manufacturers:\n- Market Assessment: Closely monitor changes in Indian policies and assess their impact on export business.\n- Local Production: Consider establishing production bases in India to leverage local policy advantages.\n- Cooperation Opportunities: Form joint ventures or partnerships with Indian companies to maintain market competitiveness.\n- Market Diversification: Explore other markets (e.g., Southeast Asia, Africa) to reduce reliance on the Indian market.`, source_zh: '印度纺织部、印度经济时报', source_en: 'Indian Ministry of Textiles, The Economic Times (India)', publishDate: '2025-06-01', sourceCountryCode: 'IN'},
+            { id: 'news4', title_zh: '日本辅料设计：亚洲时尚风向标', title_en: 'Japanese Trim Design: Asia\'s Fashion Trendsetter', content_zh: `日本以其独特的辅料设计和精湛工艺成为亚洲时尚界的引领者。日本钮扣采用新型材料（如环保树脂、金属合金）和独特纹理、色彩搭配，融合传统与现代元素，深受亚洲服装品牌青睐。例如，日本设计师常在钮扣上融入和风元素或高科技材料，满足高端市场对个性化和创新的需求。\n对中国钮扣制造商的影响：\n- 设计学习：研究日本设计风格，融入创新元素，提升产品吸引力。\n- 技术引进：投资先进设计和制造技术，提高工艺水平。\n- 品牌提升：参加国际时尚展会（如东京国际礼品展），展示独特设计。\n- 人才培养：培养专业设计团队，开发具有竞争力的产品。`, content_en: `Japan leads the Asian fashion scene with its unique accessory designs and exquisite craftsmanship. Japanese buttons often feature new materials (like eco-friendly resins, metal alloys) and unique textures and color combinations, blending traditional and modern elements, highly favored by Asian fashion brands. For instance, Japanese designers frequently incorporate traditional Japanese motifs or high-tech materials into buttons, meeting the high-end market's demand for personalization and innovation.\nImpact on Chinese Button Manufacturers:\n- Design Learning: Study Japanese design styles and incorporate innovative elements to enhance product appeal.\n- Technology Adoption: Invest in advanced design and manufacturing technologies to improve craftsmanship.\n- Brand Enhancement: Participate in international fashion exhibitions (e.g., Tokyo International Gift Show) to showcase unique designs.\n- Talent Development: Cultivate professional design teams to develop competitive products.`, source_zh: '日本时尚周、日本时尚网络', source_en: 'Japan Fashion Week, FashionNetwork.jp', publishDate: '2025-05-31', sourceCountryCode: 'JP'},
+            { id: 'news5', title_zh: '快时尚品牌加速，辅料供应链求变', title_en: 'Fast Fashion Brands Accelerate, Trim Supply Chains Seek Change', content_zh: `快时尚品牌（如Zara、H&M）以快速推出新款服装为核心竞争力，要求辅料供应商在短时间内提供多样化、高质量的产品。交货周期从几周缩短至几天，同时对产品质量稳定性和供应的连续性要求极高。品牌还强调供应链透明度和可持续性。\n对中国钮扣制造商的影响：\n- 供应链优化：采用信息化系统（如ERP）提高生产计划的灵活性和准确性。\n- 快速响应：优化生产流程，缩短交货周期，满足快时尚品牌需求。\n- 质量控制：实施严格的质量管理体系，确保产品一致性。\n- 供应商合作：与原材料供应商建立紧密关系，确保及时供应。`, content_en: `Fast fashion brands (like Zara, H&M) compete by rapidly launching new clothing styles, requiring accessory suppliers to provide diverse, high-quality products in short timeframes. Delivery cycles have shrunk from weeks to days, with extremely high demands for product quality stability and supply continuity. Brands also emphasize supply chain transparency and sustainability.\nImpact on Chinese Button Manufacturers:\n- Supply Chain Optimization: Implement information systems (like ERP) to enhance the flexibility and accuracy of production planning.\n- Rapid Response: Optimize production processes to shorten delivery times and meet the demands of fast fashion brands.\n- Quality Control: Implement strict quality management systems to ensure product consistency.\n- Supplier Collaboration: Establish close relationships with raw material suppliers to ensure timely supply.`, source_zh: 'Zara供应链战略、H&M可持续发展报告', source_en: 'Zara Supply Chain Strategy, H&M Sustainability Report', publishDate: '2025-05-30', sourceCountryCode: 'GLOBAL'},
+            { id: 'news6', title_zh: '韩国创新辅料，国际舞台受瞩目', title_en: 'Korean Innovative Trims Gain International Attention', content_zh: `韩国科研机构与企业合作，推出多种创新型服装辅料，如智能温控钮扣（可根据体温调节温度）和自清洁钮扣。这些产品受到运动品牌和高端服装制造商的关注。韩国企业（如LG、三星）在功能性辅料研发上投入巨大，推动了行业创新。\n对中国钮扣制造商的影响：\n- 研发投入：加大对创新技术的研发，探索智能或功能性钮扣。\n- 技术合作：与科研机构或科技公司合作，将新技术应用于产品。\n- 创新激励：建立激励机制，激发员工创新热情。\n- 市场推广：在国际展会上展示创新产品，吸引高端客户。`, content_en: `South Korean research institutions and companies are collaborating to launch various innovative garment accessories, such as smart temperature-regulating buttons (which can adjust temperature based on body heat) and self-cleaning buttons. These products are attracting attention from sports brands and high-end apparel manufacturers. Korean companies (like LG, Samsung) are investing heavily in R&D for functional trims, driving industry innovation.\nImpact on Chinese Button Manufacturers:\n- R&D Investment: Increase R&D investment in innovative technologies to explore smart or functional buttons.\n- Technological Cooperation: Collaborate with research institutions or tech companies to apply new technologies to products.\n- Innovation Incentives: Establish incentive mechanisms to stimulate employee enthusiasm for innovation.\n- Market Promotion: Showcase innovative products at international exhibitions to attract high-end customers.`, source_zh: '韩国服装辅料行业协会、TechCrunch韩国技术创新报道', source_en: 'Korea Apparel Accessories Industry Association, TechCrunch Korea Tech Innovation Reports', publishDate: '2025-05-29', sourceCountryCode: 'KR'},
+            { id: 'news7', title_zh: '非洲辅料市场：潜力待挖掘', title_en: 'African Trims Market: Untapped Potential', content_zh: `非洲人口众多，经济持续增长，服装需求增加，带动辅料市场发展。尼日利亚、南非、肯尼亚等国的服装制造业逐步兴起，对钮扣等辅料的需求上升。非洲辅料市场仍处于发展初期，竞争较小，为中国制造商提供了进入机会。\n对中国钮扣制造商的影响：\n- 市场调研：深入研究非洲国家和地区的市场需求和消费习惯。\n- 性价比产品：提供价格合理、质量可靠的钮扣，满足非洲市场。\n- 本地化网络：建立本地销售和服务网络，提高市场响应速度。`, content_en: `Africa, with its large population and continuous economic growth, is seeing increased demand for apparel, driving the development of the accessories market. The garment manufacturing industries in countries like Nigeria, South Africa, and Kenya are gradually emerging, leading to a rising demand for trims such as buttons. The African accessories market is still in its early stages of development with less competition, offering entry opportunities for Chinese manufacturers.\nImpact on Chinese Button Manufacturers:\n- Market Research: Conduct in-depth research on market demand and consumer habits in African countries and regions.\n- Cost-Effective Products: Offer reasonably priced, reliable quality buttons to meet the African market's needs.\n- Localization Network: Establish local sales and service networks to improve market responsiveness.`, source_zh: '世界银行非洲服装产业报告、非洲开发银行', source_en: 'World Bank Africa Apparel Industry Report, African Development Bank', publishDate: '2025-05-28', sourceCountryCode: 'AF'},
+            { id: 'news8', title_zh: '环保包装风行，辅料紧跟潮流', title_en: 'Eco-Friendly Packaging Popular, Trims Follow Suit', content_zh: `全球环保趋势推动服装辅料行业采用环保包装材料，如纸质包装、可降解塑料和回收材料。消费者和品牌（如Patagonia、Levi's）倾向于选择环保包装产品，部分品牌明确要求供应商使用可持续包装。\n对中国钮扣制造商的影响：\n- 包装升级：更换为环保包装材料，如可回收纸板或生物降解塑料。\n- 创意设计：与包装供应商合作，开发环保且吸引人的包装。\n- 品牌宣传：在营销中突出环保包装特点，提升品牌形象。`, content_en: `The global environmental trend is pushing the garment accessories industry to adopt eco-friendly packaging materials, such as paper-based packaging, biodegradable plastics, and recycled materials. Consumers and brands (like Patagonia, Levi's) prefer products with eco-friendly packaging, and some brands explicitly require suppliers to use sustainable packaging.\nImpact on Chinese Button Manufacturers:\n- Packaging Upgrade: Switch to eco-friendly packaging materials like recyclable cardboard or biodegradable plastics.\n- Creative Design: Collaborate with packaging suppliers to develop attractive and environmentally friendly packaging.\n- Brand Promotion: Highlight eco-friendly packaging features in marketing to enhance brand image.`, source_zh: 'ZDHC基金会、GreenBiz可持续包装报告', source_en: 'ZDHC Foundation, GreenBiz Sustainable Packaging Report', publishDate: '2025-05-27', sourceCountryCode: 'GLOBAL'},
+            { id: 'news9', title_zh: '3D打印助力辅料生产创新', title_en: '3D Printing Drives Innovation in Trim Production', content_zh: `3D打印技术在服装辅料生产中应用日益广泛，可快速生产复杂形状的钮扣，并支持个性化定制。品牌如Adidas和Nike利用3D打印技术为客户提供定制化钮扣，满足对独特产品的需求。\n对中国钮扣制造商的影响：\n- 技术引进：投资3D打印设备和技术，开展个性化生产。\n- 人才培养：培训3D打印技术人才，提升设计和生产能力。\n- 品牌合作：与服装品牌合作，开发3D打印钮扣产品。`, content_en: `3D printing technology is increasingly being used in the production of garment accessories, enabling rapid production of complex-shaped buttons and supporting personalized customization. Brands like Adidas and Nike are using 3D printing to offer customized buttons to customers, meeting the demand for unique products.\nImpact on Chinese Button Manufacturers:\n- Technology Adoption: Invest in 3D printing equipment and technology to enable personalized production.\n- Talent Development: Train personnel in 3D printing technology to enhance design and production capabilities.\n- Brand Collaboration: Partner with apparel brands to develop 3D printed button products.`, source_zh: '3D打印行业报告、Wohlers Report', source_en: '3D Printing Industry Reports, Wohlers Report', publishDate: '2025-05-26', sourceCountryCode: 'GLOBAL'},
+            { id: 'news10', title_zh: '欧盟强推供应链透明，辅料企业迎考', title_en: 'EU Pushes for Supply Chain Transparency, Trim Companies Face Scrutiny', content_zh: `欧盟要求服装辅料企业公开供应链信息，包括原材料来源、生产过程和环境标准。违规企业将面临高额罚款。此举旨在确保生产的可持续性和公平性。\n对中国钮扣制造商的影响：\n- 追溯体系：建立完善的供应链追溯系统，记录采购和生产信息。\n- 供应商管理：要求供应商提供合规证明文件。\n- 定期审计：对供应链进行定期审计，确保符合欧盟要求。`, content_en: `The EU requires garment accessory companies to disclose supply chain information, including raw material sources, production processes, and environmental standards. Non-compliant companies will face hefty fines. This measure aims to ensure the sustainability and fairness of production.\nImpact on Chinese Button Manufacturers:\n- Traceability System: Establish a comprehensive supply chain traceability system to record procurement and production information.\n- Supplier Management: Require suppliers to provide compliance documentation.\n- Regular Audits: Conduct regular audits of the supply chain to ensure compliance with EU requirements.`, source_zh: '欧盟供应链透明法规、EcoVadis报告', source_en: 'EU Supply Chain Transparency Regulation, EcoVadis Reports', publishDate: '2025-05-25', sourceCountryCode: 'EU'},
+            { id: 'news11', title_zh: '品牌携手辅料商，长期合作谋共赢', title_en: 'Brands and Trim Suppliers Join Forces for Long-Term Win-Win Cooperation', content_zh: `耐克、阿迪达斯等品牌通过与优质辅料供应商签订长期合作协议，确保产品质量、供应链稳定性和协同创新。这种模式降低合作成本，提升市场竞争力。\n对中国钮扣制造商的影响：\n- 质量提升：提高产品质量和服务水平，争取长期合作机会。\n- 联合研发：与品牌共同开发创新产品，满足市场需求。\n- 信任建立：加强沟通，建立互信合作机制。`, content_en: `Brands like Nike and Adidas are ensuring product quality, supply chain stability, and collaborative innovation by signing long-term cooperation agreements with high-quality accessory suppliers. This model reduces cooperation costs and enhances market competitiveness.\nImpact on Chinese Button Manufacturers:\n- Quality Improvement: Enhance product quality and service levels to secure long-term cooperation opportunities.\n- Joint R&D: Collaborate with brands to develop innovative products that meet market demands.\n- Trust Building: Strengthen communication and establish mutual trust and cooperation mechanisms.`, source_zh: '耐克供应商报告、阿迪达斯供应链战略', source_en: 'Nike Supplier Reports, Adidas Supply Chain Strategy', publishDate: '2025-05-24', sourceCountryCode: 'GLOBAL'},
+            { id: 'news12', title_zh: '东南亚辅料企业加速自动化转型', title_en: 'Southeast Asian Trim Companies Accelerate Automation Transformation', content_zh: `越南、泰国等东南亚国家为应对市场竞争，投资自动化设备，如全自动钮扣制造机和智能仓储系统。这些技术提高生产效率、降低人工成本并提升产品质量。\n对中国钮扣制造商的影响：\n- 自动化评估：评估自身自动化水平，投资相关设备。\n- 员工培训：培训员工操作和维护自动化设备。\n- 流程优化：优化生产流程，提升竞争力。`, content_en: `Countries in Southeast Asia, such as Vietnam and Thailand, are investing in automation equipment like fully automatic button-making machines and smart warehousing systems to cope with market competition. These technologies improve production efficiency, reduce labor costs, and enhance product quality.\nImpact on Chinese Button Manufacturers:\n- Automation Assessment: Evaluate their own automation levels and invest in relevant equipment.\n- Employee Training: Train employees to operate and maintain automation equipment.\n- Process Optimization: Optimize production processes to enhance competitiveness.`, source_zh: '东盟服装行业报告、亚洲制造业自动化趋势报告', source_en: 'ASEAN Apparel Industry Report, Asia Manufacturing Automation Trends Report', publishDate: '2025-05-23', sourceCountryCode: 'SEA'}
+        ];
+
+
+        function updateDateDisplay() {
+            const today = new Date();
+            const options_zh = { year: 'numeric', month: 'long', day: 'numeric' };
+            const options_en = { year: 'numeric', month: 'long', day: 'numeric' }; 
+            currentDateElement.textContent = today.toLocaleDateString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US', currentLanguage === 'zh' ? options_zh : options_en);
+        }
+        
+        function getSnippet(fullContent, maxLength = 100) { 
+            if (!fullContent) return '';
+            let plainTextContent = fullContent.replace(/\n/g, " "); 
+            if (plainTextContent.length <= maxLength) return plainTextContent;
+            
+            let snippet = plainTextContent.substring(0, maxLength);
+            const lastSpace = snippet.lastIndexOf(' ');
+            if (lastSpace > maxLength / 2 && lastSpace > 0) { 
+                snippet = snippet.substring(0, lastSpace);
+            }
+            return snippet + '...';
+        }
+
+        function renderNewsItem(news) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'news-item';
+            itemDiv.dataset.id = news.id;
+
+            const title = news[`title_${currentLanguage}`];
+            const fullContent = news[`content_${currentLanguage}`];
+            const source = news[`source_${currentLanguage}`];
+            const snippet = getSnippet(fullContent);
+            const flagEmoji = flagEmojis[news.sourceCountryCode] || '';
+
+
+            itemDiv.innerHTML = `
+                <h3 class="news-title">${title}</h3>
+                <div class="news-content-container">
+                    <p class="news-snippet-content">${snippet}</p>
+                    <p class="news-full-content hidden">${fullContent.replace(/- /g, '• ').replace(/\n\n/g, '\n<br>\n')}</p> {/* Replace hyphens with bullets and add space for paragraphs */}
+                </div>
+                <button class="read-more-button mt-2" data-lang-key="read_more"><span class="button-text">阅读全文</span><span class="arrow-icon"> ▼</span></button>
+                <div class="news-actions mt-4 flex flex-wrap gap-3">
+                    <button class="action-button tts-button" data-lang-key="read_aloud_item"><span class="icon-speaker"></span><span class="button-text">朗读此条</span></button>
+                    <button class="ai-action-button ai-summary-button" data-news-id="${news.id}" data-lang-key="ai_summary_button"><span class="icon-ai"></span><span class="button-text">AI摘要</span></button>
+                </div>
+                <div class="ai-summary-display mt-4 hidden">
+                    <p class="ai-summary-text-area"></p>
+                </div>
+                <p class="news-meta mt-4 pt-4 border-t border-gray-200"> 
+                    <span class="flag-icon">${flagEmoji}</span>
+                    <span data-lang-key="source">来源</span>: <span class="source-text">${source}</span> | 
+                    <span data-lang-key="published_on">发布于</span>: <span class="publish-date-text">${new Date(news.publishDate).toLocaleDateString(currentLanguage === 'zh' ? 'zh-CN' : 'en-US')}</span>
+                </p>
+            `;
+            
+            const readMoreButton = itemDiv.querySelector('.read-more-button');
+            const snippetContentEl = itemDiv.querySelector('.news-snippet-content');
+            const fullContentEl = itemDiv.querySelector('.news-full-content');
+            const arrowIcon = readMoreButton.querySelector('.arrow-icon');
+
+            readMoreButton.addEventListener('click', () => {
+                const isExpanded = fullContentEl.classList.contains('hidden');
+                snippetContentEl.classList.toggle('hidden', isExpanded);
+                fullContentEl.classList.toggle('hidden', !isExpanded);
+                
+                const buttonTextSpan = readMoreButton.querySelector('.button-text');
+                buttonTextSpan.textContent = isExpanded ? (currentLanguage === 'zh' ? '收起详情' : 'Collapse Detail') : (currentLanguage === 'zh' ? '阅读全文' : 'Read Full Article');
+                readMoreButton.dataset.langKey = isExpanded ? 'collapse_detail' : 'read_more';
+                if (arrowIcon) arrowIcon.style.transform = isExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
+                readMoreButton.classList.toggle('expanded', isExpanded);
+
+            });
+
+            itemDiv.querySelector('.tts-button').addEventListener('click', (e) => {
+                stopReadAll(); 
+                toggleTTS(news.id, title, fullContent, e.currentTarget);
+            });
+            itemDiv.querySelector('.ai-summary-button').addEventListener('click', (e) => {
+                 handleAiSummary(news.id, title, fullContent, e.currentTarget); 
+            });
+            return itemDiv;
+        }
+        
+        async function callGeminiAPI(promptText) {
+            let chatHistory = [];
+            chatHistory.push({ role: "user", parts: [{ text: promptText }] });
+            const payload = { contents: chatHistory };
+            const apiKey = ""; 
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Gemini API Error:', errorData);
+                throw new Error(`API request failed: ${errorData.error?.message || response.status}`);
+            }
+
+            const result = await response.json();
+            if (result.candidates && result.candidates.length > 0 &&
+                result.candidates[0].content && result.candidates[0].content.parts &&
+                result.candidates[0].content.parts.length > 0) {
+                return result.candidates[0].content.parts[0].text.trim();
+            } else {
+                throw new Error(currentLanguage === 'zh' ? 'AI未能生成有效回复。' : 'AI did not generate a valid response.');
+            }
+        }
+
+        async function handleAiSummary(newsId, title, fullNewsContent, button) { 
+            const newsItemElement = document.querySelector(`.news-item[data-id="${newsId}"]`);
+            const summaryDisplay = newsItemElement.querySelector('.ai-summary-display');
+            const summaryTextArea = summaryDisplay.querySelector('.ai-summary-text-area');
+            const buttonTextSpan = button.querySelector('.button-text');
+
+            const originalButtonText = currentLanguage === 'zh' ? 'AI摘要' : 'AI Summary';
+            const loadingText = currentLanguage === 'zh' ? '生成中...' : 'Generating...';
+            const collapseText = currentLanguage === 'zh' ? '隐藏摘要' : 'Hide Summary';
+            const errorText = currentLanguage === 'zh' ? '摘要失败' : 'Summary Failed';
+            const initialPromptText = currentLanguage === 'zh' ? 'AI正在分析...' : 'AI is analyzing...';
+
+            if (summaryDisplay.classList.contains('hidden') || summaryTextArea.textContent === '' || summaryTextArea.textContent.includes(initialPromptText.substring(0,5)) || summaryTextArea.textContent.includes(errorText.substring(0,2)) ) {
+                button.disabled = true;
+                if(buttonTextSpan) buttonTextSpan.textContent = loadingText; else button.childNodes[1].nodeValue = ` ${loadingText}`;
+                summaryTextArea.textContent = initialPromptText;
+                summaryDisplay.classList.remove('hidden');
+
+                const promptForSummary = currentLanguage === 'zh' ?
+                    `请为以下关于服装辅料的新闻内容生成一个非常简洁、精炼的核心摘要（请严格控制在70中文字以内，突出关键信息）：\n新闻标题：${title}\n新闻内容：\n${fullNewsContent}\n\n核心摘要：` :
+                    `Generate a very concise and insightful core summary (strictly within 40-50 words, highlighting key information) for the following fashion accessories news content:\nNews Title: ${title}\nNews Content:\n${fullNewsContent}\n\nCore Summary:`;
+
+                try {
+                    const aiGeneratedText = await callGeminiAPI(promptForSummary);
+                    summaryTextArea.textContent = aiGeneratedText;
+                    if(buttonTextSpan) buttonTextSpan.textContent = collapseText; else button.childNodes[1].nodeValue = ` ${collapseText}`;
+                    button.dataset.langKey = "ai_summary_collapse"; 
+                } catch (error) {
+                    console.error("AI Summary Error:", error);
+                    summaryTextArea.textContent = `${errorText}: ${error.message}`;
+                    if(buttonTextSpan) buttonTextSpan.textContent = originalButtonText; else button.childNodes[1].nodeValue = ` ${originalButtonText}`;
+                     button.dataset.langKey = "ai_summary_button";
+                } finally {
+                    button.disabled = false;
+                }
+            } else {
+                summaryDisplay.classList.toggle('hidden');
+                if (summaryDisplay.classList.contains('hidden')) {
+                    if(buttonTextSpan) buttonTextSpan.textContent = originalButtonText; else button.childNodes[1].nodeValue = ` ${originalButtonText}`;
+                    button.dataset.langKey = "ai_summary_button";
+                } else {
+                    if(buttonTextSpan) buttonTextSpan.textContent = collapseText; else button.childNodes[1].nodeValue = ` ${collapseText}`;
+                    button.dataset.langKey = "ai_summary_collapse";
+                }
+            }
+        }
+        
+        async function handleAiTrendAnalysis(button) {
+            const buttonTextSpan = button.querySelector('.button-text');
+            const originalButtonText = currentLanguage === 'zh' ? 'AI趋势分析' : 'AI Trend Analysis';
+            const loadingText = currentLanguage === 'zh' ? '分析中...' : 'Analyzing...';
+            const collapseText = currentLanguage === 'zh' ? '隐藏趋势分析' : 'Hide Trend Analysis';
+            const errorText = currentLanguage === 'zh' ? '趋势分析失败' : 'Trend Analysis Failed';
+            const initialPromptText = currentLanguage === 'zh' ? 'AI正在分析所有新闻以提炼趋势...' : 'AI is analyzing all news to extract trends...';
+
+            if (aiTrendAnalysisSection.classList.contains('hidden') || aiTrendAnalysisDisplay.textContent === '' || aiTrendAnalysisDisplay.textContent.includes(initialPromptText.substring(0,5)) || aiTrendAnalysisDisplay.textContent.includes(errorText.substring(0,2))) {
+                button.disabled = true;
+                if(buttonTextSpan) buttonTextSpan.textContent = loadingText; else button.childNodes[1].nodeValue = ` ${loadingText}`;
+                aiTrendAnalysisDisplay.textContent = initialPromptText;
+                aiTrendAnalysisSection.classList.remove('hidden');
+
+                let newsContext = "";
+                initialNewsData.forEach((news, index) => {
+                    const t = news[`title_${currentLanguage}`];
+                    const c_snippet = getSnippet(news[`content_${currentLanguage}`], 250); 
+                    newsContext += `新闻 ${index + 1} (来源: ${news[`source_${currentLanguage}`]}):\n标题：${t}\n内容概要：${c_snippet}\n\n`;
+                });
+
+                const promptForTrends = currentLanguage === 'zh' ?
+                    `作为服装辅料行业（特别是钮扣工厂）的资深战略顾问，请基于以下${initialNewsData.length}条国际服装辅料新闻（每条包含标题和内容概要），进行深入且细致的分析。您的目标是提炼出2-3个对于【服装辅料钮扣工厂】而言，最具前瞻性、能够直接启发其在【产品创新】（例如新材料、新功能、新设计理念的钮扣）、【工艺改进】（例如更环保、高效的生产方式）、【市场拓展】（例如新的目标市场、新的合作模式）或【整体战略调整】方面的【新思考和具体发展方向】。请确保您的分析独到且具有可操作性，避免宽泛的陈述，力求为钮扣工厂的成长迭代提供具体、有价值的建议。请用清晰、简洁的语言表述，每条思考/方向前用数字编号，并确保回复只包含这些新思考和发展方向。` :
+                    `As a senior strategic advisor for the fashion accessories industry (specifically for button factories), please conduct an in-depth and detailed analysis based on the following ${initialNewsData.length} news items about fashion accessories (each including title and content summary). Your goal is to extract 2-3 of the most forward-looking 'new ideas and specific development directions' for [clothing accessories button factories] that can directly inspire their [product innovation] (e.g., new materials, new functions, new design concepts for buttons), [process improvement] (e.g., more eco-friendly, efficient production methods), [market expansion] (e.g., new target markets, new collaboration models), or [overall strategic adjustments]. Ensure your analysis is unique and actionable, avoiding broad statements, and strive to provide concrete, valuable recommendations for the growth and iteration of button factories. Use clear, concise language, number each idea/direction, and ensure the response contains only these new ideas and development directions.`;
+                
+                try {
+                    const aiGeneratedTrends = await callGeminiAPI(promptForTrends);
+                    aiTrendAnalysisDisplay.textContent = aiGeneratedTrends;
+                    if(buttonTextSpan) buttonTextSpan.textContent = collapseText; else button.childNodes[1].nodeValue = ` ${collapseText}`;
+                    button.dataset.langKey = "ai_trend_collapse";
+                } catch (error) {
+                    console.error("AI Trend Analysis Error:", error);
+                    aiTrendAnalysisDisplay.textContent = `${errorText}: ${error.message}`;
+                    if(buttonTextSpan) buttonTextSpan.textContent = originalButtonText; else button.childNodes[1].nodeValue = ` ${originalButtonText}`;
+                    button.dataset.langKey = "ai_trend_analysis_button";
+                } finally {
+                    button.disabled = false;
+                }
+            } else {
+                aiTrendAnalysisSection.classList.toggle('hidden');
+                 if (aiTrendAnalysisSection.classList.contains('hidden')) {
+                    if(buttonTextSpan) buttonTextSpan.textContent = originalButtonText; else button.childNodes[1].nodeValue = ` ${originalButtonText}`;
+                    button.dataset.langKey = "ai_trend_analysis_button";
+                } else {
+                    if(buttonTextSpan) buttonTextSpan.textContent = collapseText; else button.childNodes[1].nodeValue = ` ${collapseText}`;
+                    button.dataset.langKey = "ai_trend_collapse";
+                }
+            }
+        }
+
+        aiTrendAnalysisButton.addEventListener('click', (e) => handleAiTrendAnalysis(e.currentTarget));
+
+        function renderNewsFeed() {
+            newsFeed.innerHTML = '';
+            loadingState.classList.add('hidden');
+
+            if (initialNewsData.length === 0) {
+                noNewsState.classList.remove('hidden');
+                return;
+            }
+            noNewsState.classList.add('hidden');
+            initialNewsData.forEach(news => {
+                newsFeed.appendChild(renderNewsItem(news));
+            });
+            updateStaticUIText();
+        }
+        
+        function stopReadAll(updateButtonUIText = true) {
+            if (isPlayingAll) {
+                isPlayingAll = false;
+                speechInstance.cancel();
+                currentUtterance = null;
+                currentPlayAllIndex = 0;
+                document.querySelectorAll('.news-item.reading').forEach(item => item.classList.remove('reading'));
+            }
+             if(updateButtonUIText) updateStaticUIText(); 
+        }
+
+        function speakNextNewsItem() {
+            if (!isPlayingAll || currentPlayAllIndex >= initialNewsData.length) {
+                stopReadAll();
+                return;
+            }
+
+            document.querySelectorAll('.news-item.reading').forEach(item => item.classList.remove('reading'));
+
+            const news = initialNewsData[currentPlayAllIndex];
+            const title = news[`title_${currentLanguage}`];
+            const content = news[`content_${currentLanguage}`]; 
+            const fullText = `${title}. ${content}`;
+            
+            const newsItemElement = newsFeed.querySelector(`.news-item[data-id="${news.id}"]`);
+            if (newsItemElement) {
+                newsItemElement.classList.add('reading');
+                newsItemElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            currentUtterance = new SpeechSynthesisUtterance(fullText);
+            currentUtterance.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en-US';
+            currentUtterance.newsId = news.id; 
+
+            currentUtterance.onend = () => {
+                if (newsItemElement) newsItemElement.classList.remove('reading');
+                if (isPlayingAll) { 
+                    currentPlayAllIndex++;
+                    speakNextNewsItem();
+                } else {
+                     currentUtterance = null; 
+                }
+            };
+            currentUtterance.onerror = (event) => {
+                if (newsItemElement) newsItemElement.classList.remove('reading');
+                if (event.error === 'interrupted') {
+                    console.log(`SpeechSynthesisUtterance (Read All for item ${news.id}) was intentionally interrupted.`);
+                    if (isPlayingAll) {
+                        stopReadAll();
+                    }
+                } else {
+                    console.error(`SpeechSynthesisUtterance.onerror (Read All for item ${news.id})`, event, 'Error details:', event.error);
+                    if (isPlayingAll) { 
+                        currentPlayAllIndex++;
+                        speakNextNewsItem();
+                    }
+                }
+                if (!isPlayingAll || event.error) { 
+                    currentUtterance = null;
+                }
+            };
+            speechInstance.speak(currentUtterance);
+        }
+
+        readAllButton.addEventListener('click', () => {
+            if (isPlayingAll) {
+                stopReadAll();
+            } else {
+                if (speechInstance.speaking && currentUtterance) { 
+                    speechInstance.cancel();
+                    const individualSpeakingButton = newsFeed.querySelector(`.tts-button.speaking`);
+                    if(individualSpeakingButton) {
+                        individualSpeakingButton.classList.remove('speaking');
+                    }
+                     document.querySelectorAll('.news-item.reading').forEach(item => item.classList.remove('reading'));
+                }
+                isPlayingAll = true;
+                currentPlayAllIndex = 0;
+                speakNextNewsItem();
+            }
+            updateStaticUIText();
+        });
+
+
+        function toggleTTS(newsId, title, fullNewsContent, button) { 
+            stopReadAll(false); 
+
+            const newsItemElement = button.closest('.news-item');
+
+            if (speechInstance.speaking && currentUtterance && currentUtterance.newsId === newsId) {
+                speechInstance.cancel(); 
+                currentUtterance = null;
+                button.classList.remove('speaking');
+                if (newsItemElement) newsItemElement.classList.remove('reading');
+            } else {
+                if (speechInstance.speaking) {
+                    speechInstance.cancel(); 
+                    document.querySelectorAll('.tts-button.speaking').forEach(btn => {
+                        btn.classList.remove('speaking');
+                    });
+                    document.querySelectorAll('.news-item.reading').forEach(item => item.classList.remove('reading'));
+                }
+
+                const textToSpeak = `${title}. ${fullNewsContent}`; 
+                currentUtterance = new SpeechSynthesisUtterance(textToSpeak);
+                currentUtterance.lang = currentLanguage === 'zh' ? 'zh-CN' : 'en-US';
+                currentUtterance.newsId = newsId; 
+                
+                currentUtterance.onstart = () => {
+                    if (newsItemElement) newsItemElement.classList.add('reading');
+                };
+                currentUtterance.onend = () => {
+                    button.classList.remove('speaking');
+                    if (newsItemElement) newsItemElement.classList.remove('reading');
+                    currentUtterance = null;
+                    updateStaticUIText(); 
+                };
+                currentUtterance.onerror = (event) => {
+                    if (newsItemElement) newsItemElement.classList.remove('reading');
+                     if (event.error === 'interrupted') {
+                        console.log(`SpeechSynthesisUtterance (Individual for item ${newsId}) was intentionally interrupted.`);
+                    } else {
+                        console.error(`SpeechSynthesisUtterance.onerror (Individual for item ${newsId})`, event, 'Error details:', event.error);
+                    }
+                    button.classList.remove('speaking');
+                    currentUtterance = null; 
+                    updateStaticUIText(); 
+                };
+
+                speechInstance.speak(currentUtterance);
+                button.classList.add('speaking');
+            }
+            updateStaticUIText();
+        }
+
+        function updateStaticUIText() {
+            appTitleElement.textContent = appTitles[currentLanguage];
+            updateDateDisplay(); 
+            languageSwitcherBtn.textContent = currentLanguage === 'zh' ? 'EN' : '中';
+            
+            const readAllButtonTextSpan = readAllButton.querySelector('.button-text');
+            if (isPlayingAll) {
+                if(readAllButtonTextSpan) readAllButtonTextSpan.textContent = currentLanguage === 'zh' ? '停止自动朗读' : 'Stop Auto Reading';
+            } else {
+                if(readAllButtonTextSpan) readAllButtonTextSpan.textContent = currentLanguage === 'zh' ? '自动朗读全部' : 'Read All Automatically';
+            }
+            
+            const aiTrendButtonTextSpan = aiTrendAnalysisButton.querySelector('.button-text');
+            const aiTrendButtonOriginalText = currentLanguage === 'zh' ? 'AI趋势分析' : 'AI Trend Analysis';
+            const aiTrendButtonCollapseText = currentLanguage === 'zh' ? '隐藏趋势分析' : 'Hide Trend Analysis';
+            if (aiTrendAnalysisSection.classList.contains('hidden') || aiTrendAnalysisDisplay.textContent === '' || aiTrendAnalysisDisplay.textContent.includes('AI正在分析') || aiTrendAnalysisDisplay.textContent.includes('趋势分析失败')) {
+                 if(aiTrendButtonTextSpan) aiTrendButtonTextSpan.textContent = aiTrendButtonOriginalText;
+                 aiTrendAnalysisButton.dataset.langKey = "ai_trend_analysis_button";
+            } else {
+                 if(aiTrendButtonTextSpan) aiTrendButtonTextSpan.textContent = aiTrendButtonCollapseText;
+                 aiTrendAnalysisButton.dataset.langKey = "ai_trend_collapse";
+            }
+
+
+            document.querySelectorAll('[data-lang-key]').forEach(el => {
+                const key = el.dataset.langKey;
+                let text = '';
+                if (key === 'source') text = currentLanguage === 'zh' ? '来源' : 'Source';
+                else if (key === 'published_on') text = currentLanguage === 'zh' ? '发布于' : 'Published on';
+                
+                else if (key === 'read_aloud_item') text = currentLanguage === 'zh' ? '朗读此条' : 'Read This';
+                else if (key === 'read_failed_item') text = currentLanguage === 'zh' ? '朗读失败' : 'Read Failed';
+
+                else if (key === 'ai_summary_button') text = currentLanguage === 'zh' ? 'AI摘要' : 'AI Summary';
+                else if (key === 'ai_summary_collapse') text = currentLanguage === 'zh' ? '隐藏摘要' : 'Hide Summary';
+                
+                else if (key === 'ai_trend_analysis_title') text = currentLanguage === 'zh' ? 'AI趋势洞察' : 'AI Trend Insights';
+                
+                else if (key === 'read_more') text = currentLanguage === 'zh' ? '阅读全文' : 'Read Full Article';
+                else if (key === 'collapse_detail') text = currentLanguage === 'zh' ? '收起详情' : 'Collapse Detail';
+
+                const buttonTextEl = el.querySelector('.button-text');
+
+                if (el.tagName === 'BUTTON' && el.id !== 'languageSwitcher' && el.id !== 'readAllButton' && el.id !== 'aiTrendAnalysisButton') { 
+                    if (el.classList.contains('tts-button')) {
+                        const buttonTextContent = el.classList.contains('speaking') ? (currentLanguage === 'zh' ? '停止朗读' : 'Stop Reading') : (currentLanguage === 'zh' ? '朗读此条' : 'Read This');
+                        if(buttonTextEl) buttonTextEl.textContent = buttonTextContent;
+                    } else if (el.classList.contains('ai-summary-button')) {
+                        const summaryDisp = el.closest('.news-item').querySelector('.ai-summary-display');
+                        let aiButtonTextContent = '';
+                        if (summaryDisp && !summaryDisp.classList.contains('hidden') && summaryDisp.querySelector('.ai-summary-text-area').textContent.length > 0 && !summaryDisp.querySelector('.ai-summary-text-area').textContent.includes('正在') && !summaryDisp.querySelector('.ai-summary-text-area').textContent.includes('错误') && !summaryDisp.querySelector('.ai-summary-text-area').textContent.includes('未能')) {
+                             aiButtonTextContent = currentLanguage === 'zh' ? '隐藏摘要' : 'Hide Summary';
+                        } else if (el.disabled) { 
+                            aiButtonTextContent = currentLanguage === 'zh' ? '生成中...' : 'Generating...';
+                        } else {
+                            aiButtonTextContent = currentLanguage === 'zh' ? 'AI摘要' : 'AI Summary';
+                        }
+                        if(buttonTextEl) buttonTextEl.textContent = aiButtonTextContent;
+
+                    } else if (el.classList.contains('read-more-button')) {
+                        const fullContentDiv = el.closest('.news-item').querySelector('.news-full-content');
+                         const buttonTextContent = (fullContentDiv && !fullContentDiv.classList.contains('hidden')) ? (currentLanguage === 'zh' ? '收起详情' : 'Collapse Detail') : (currentLanguage === 'zh' ? '阅读全文' : 'Read Full Article');
+                        if(buttonTextEl) buttonTextEl.textContent = buttonTextContent; else el.textContent = buttonTextContent; 
+                    }
+
+                } else if (text && el.tagName !== 'BUTTON' && el.id !== 'aiTrendAnalysisButton') { 
+                    // This targets spans like "来源:" and "发布于:"
+                    if (el.dataset.langKey === 'source' || el.dataset.langKey === 'published_on'){
+                         // The text for these is part of the innerHTML, so we update the specific spans
+                         const sourceTextSpan = el.closest('.news-meta').querySelector('.source-text');
+                         const publishDateTextSpan = el.closest('.news-meta').querySelector('.publish-date-text');
+                         if(sourceTextSpan && el.dataset.langKey === 'source') { /* Update logic for source text if needed */ }
+                         if(publishDateTextSpan && el.dataset.langKey === 'published_on') { /* Update logic for date text if needed */ }
+                         // The label itself:
+                         if(el.childNodes.length > 0 && el.childNodes[0].nodeType === Node.TEXT_NODE) {
+                            el.childNodes[0].nodeValue = text + ': '; // Add colon back
+                         }
+                    }
+                } else if (text && el.id === 'aiTrendAnalysisTitle') { 
+                    el.textContent = text;
+                }
+            });
+            const trendTitleEl = document.querySelector('#aiTrendAnalysisSection .section-title');
+            if(trendTitleEl) {
+                trendTitleEl.textContent = currentLanguage === 'zh' ? 'AI趋势洞察' : 'AI Trend Insights';
+            }
+        }
+
+        languageSwitcherBtn.addEventListener('click', () => {
+            currentLanguage = currentLanguage === 'zh' ? 'en' : 'zh';
+            stopReadAll(); 
+            document.querySelectorAll('.ai-summary-display').forEach(disp => disp.classList.add('hidden'));
+            aiTrendAnalysisSection.classList.add('hidden'); 
+            aiTrendAnalysisDisplay.textContent = ''; 
+            renderNewsFeed(); 
+        });
+        
+        updateDateDisplay();
+        renderNewsFeed();
+
+    </script>
+</body>
+</html>
